@@ -75,6 +75,11 @@ def _yaml() -> YAML:
     y = YAML()
     y.preserve_quotes = True
     y.width = 4096  # never line-wrap our long table identifiers
+    # Match dum.yaml's block style (dash indented under the key) so a round-trip
+    # touches only the lines we add. ruamel does NOT auto-detect this — without it
+    # the default (sequence=2, offset=0) re-indents every list and the whole file
+    # shows as changed.
+    y.indent(mapping=2, sequence=4, offset=2)
     return y
 
 

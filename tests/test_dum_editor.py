@@ -41,6 +41,24 @@ class TestRoundTrip:
         twice = dump_dum(load_dum(once))
         assert once == twice
 
+    def test_unedited_round_trip_is_byte_identical(self):
+        # A no-edit round-trip must NOT reformat the file (e.g. re-indent block
+        # sequences) — otherwise a grant commit shows the whole file as changed.
+        assert dump_dum(load_dum(DUM_TEXT)) == DUM_TEXT
+
+    def test_adding_one_grant_changes_only_one_line(self):
+        from jirade.tools.permission_advisor import AdvisorDecision, TableEvidence
+        from jirade.tools.dum_editor import apply_grants
+        dum = load_dum(DUM_TEXT)
+        apply_grants(dum, [AdvisorDecision(
+            evidence=TableEvidence(
+                table_name="dim_brand_new", catalog="analytics", schema="dimensional", path="x.sql",
+            ),
+            status="core_domain", allowed_divisions=["Core"], confidence="high",
+        )])
+        added = [l for l in dump_dum(dum).splitlines() if l not in DUM_TEXT.splitlines()]
+        assert added == ["    - analytics.dimensional.dim_brand_new: read"]
+
 
 # ── division resolver ─────────────────────────────────────────────────────────
 class TestResolveDivisionGroups:
